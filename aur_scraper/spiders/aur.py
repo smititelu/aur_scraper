@@ -86,7 +86,8 @@ class AurSpider(scrapy.Spider):
 
             if "smartgold" in url:
                 callback = self.parse_smartgold
-                wait_selector_button1 = "button[aria-label=\"Accept Cookies\"]"
+                #wait_selector_button1 = "button[aria-label=\"Accept Cookies\"]"
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 15000))
 
                 button = "button[class=\"load-next-button load-more-button shop-load-more-button\"]"
 
@@ -132,16 +133,17 @@ class AurSpider(scrapy.Spider):
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 10000))
             elif "stonex" in url:
                 callback = self.parse_stonex
-                wait_selector_button1 = "a[class=\"cc-btn cc-allow cc-btn-format\"]"
-            elif "magnor" in url:
-                wait_selector = "ol[class=\"products list items product-items\"]"
-                wait_selector_button1 = "button#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"
+                #wait_selector_button1 = "a[class=\"cc-btn cc-allow cc-btn-format\"]"
+                wait_selector = "div[class=\"pics-view row\"]"
+            elif "magnorshop" in url:
+                wait_selector = "div[class=\"products wrapper grid products-grid\"]"
+                #wait_selector_button1 = "button#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"                
                 callback = self.parse_magnor
                 scroll = True
                 wait_initial_network = True
             elif "neogold" in url:
-                wait_selector_button1 = "button[class=\"cky-btn cky-btn-accept\"]"
-                wait_selector_button2 = "button[class=\"cmplz-btn cmplz-accept\"]"
+                #wait_selector_button1 = "button[class=\"cky-btn cky-btn-accept\"]"
+                #wait_selector_button2 = "button[class=\"cmplz-btn cmplz-accept\"]"
                 wait_selector = "div[class=\"main-content\"]"
                 callback = self.parse_neogold
                 scroll = True
@@ -171,10 +173,10 @@ class AurSpider(scrapy.Spider):
             elif "aurlingou" in url:
                 callback = self.parse_aurlingou
                 wait_selector = "div[class=\"section--content category_page\"]"
-                wait_selector_button1 = "button[class=\"allow-btn btn js-accept-all-cookies\"]"
+                #wait_selector_button1 = "button[class=\"allow-btn btn js-accept-all-cookies\"]"
             elif "citygold" in url:
-                wait_selector = "ol[class=\"ais-Hits-list row ais-list-no-style\"]"
-                wait_selector_button1 = "button[class=\"CybotCookiebotDialogBodyButton\"]"
+                wait_selector = "div[class=\"ais-Hits\"]"
+                #wait_selector_button1 = "button[class=\"CybotCookiebotDialogBodyButton\"]"
                 callback = self.parse_citygold
                 scroll = True
             else:
@@ -226,7 +228,7 @@ class AurSpider(scrapy.Spider):
             self.logger.info(f"SKIP COIN {item_link}")
             return 0
 
-        item_title = item_title.replace('gold', '').replace('green', '').replace('roz', '').replace('kang', '').replace('lingo', '').replace('giovan', '')
+        item_title = item_title.replace('gold', '').replace('green', '').replace('roz', '').replace('kang', '').replace('lingo', '').replace('giovan', '').replace('multigram', '').replace('mozart', '').replace('king', '')
         try:
             if 'kilogram' in item_title:
                 item_weight = float(item_title.strip().split("kilogram")[0].strip().split()[-1].replace(',', '.').split('x')[0]) * config['kilo']

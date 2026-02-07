@@ -6,16 +6,23 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+PLAYWRIGHT_CONTEXT_ARGS = {
+    "default_navigation_timeout": 60000, # For navigations
+    "default_timeout": 60000,            # For all other actions like wait_for_selector
+}
 PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 60000
 LOG_LEVEL='INFO'
+DOWNLOAD_TIMEOUT = 60
 DOWNLOAD_HANDLERS = {
-    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
-    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "http": "scrapy_playwright_stealth.handler.ScrapyPlaywrightStealthDownloadHandler",
+    "https": "scrapy_playwright_stealth.handler.ScrapyPlaywrightStealthDownloadHandler",
+    #"http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    #"https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
 }
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 PLAYWRIGHT_BROWSER_TYPE = "chromium"  # Choose 'chromium', 'firefox', or 'webkit'
 PLAYWRIGHT_LAUNCH_OPTIONS = {
-    "headless": False,  # Set to True if you prefer headless mode
+    "headless": True,  # Set to True if you prefer headless mode
 }
 
 BOT_NAME = "aur_scraper"
@@ -31,14 +38,14 @@ NEWSPIDER_MODULE = "aur_scraper.spiders"
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 64
+CONCURRENT_REQUESTS = 128
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 5
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)

@@ -5,6 +5,7 @@
 python3 -m venv ~/.playwright
 source ~/.playwright/bin/activate
 pip install scrapy-playwright
+pip install scrapy-playwright-stealth
 ```
 
 2. Run gold crawler
