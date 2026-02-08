@@ -22,7 +22,7 @@ DOWNLOAD_HANDLERS = {
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 PLAYWRIGHT_BROWSER_TYPE = "chromium"  # Choose 'chromium', 'firefox', or 'webkit'
 PLAYWRIGHT_LAUNCH_OPTIONS = {
-    "headless": True,  # Set to True if you prefer headless mode
+    "headless": False,  # Set to True if you prefer headless mode
 }
 
 BOT_NAME = "aur_scraper"
@@ -43,9 +43,9 @@ CONCURRENT_REQUESTS = 128
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 5
+DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
-CONCURRENT_REQUESTS_PER_DOMAIN = 16
+#CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)

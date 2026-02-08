@@ -3,7 +3,7 @@ import scrapy
 from scrapy_playwright.page import PageMethod
 
 config = {
-    'stoc': True,
+    'stock': True,
     'weight': 100,
 
     'ounce': 31.1,
@@ -30,12 +30,12 @@ class AurSpider(scrapy.Spider):
         "citygold.ro",
     ]
     start_urls = [
+        "https://avangardgold.ro/collections/vanzare-aur",
         "https://smartgold.ro/index.php/categorie-produs/lingouri",
         "https://smartgold.ro/index.php/categorie-produs/monede/",
         "https://magnorshop.ro/lingouri",
         "https://tavex.ro/aur/page/1",
         "https://tavex.ro/aur/page/2",
-        "https://avangardgold.ro/collections/vanzare-aur",
         "https://www.neogold.ro/lingouri-de-aur/",
         "https://www.neogold.ro/monede-de-aur/",
         "https://goldbars.ro/catalog/lingouri-de-aur",
@@ -98,10 +98,10 @@ class AurSpider(scrapy.Spider):
                     pages = 4
                 else:
                     pages = 0
+
                 while page < pages:
-                    custom_page_methods.append(PageMethod("wait_for_timeout", 2000))
                     custom_page_methods.append(PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"))
-                    custom_page_methods.append(PageMethod("wait_for_timeout", 2000))
+                    custom_page_methods.append(PageMethod("wait_for_timeout", 5000))
                     custom_page_methods.append(PageMethod("click", button))
                     page = page + 1
             elif "goldsilvershop24" in url:
@@ -130,28 +130,36 @@ class AurSpider(scrapy.Spider):
 
                 # Wait for a real element to confirm the challenge is solved
                 playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
+                playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 10000))
             elif "stonex" in url:
                 callback = self.parse_stonex
                 #wait_selector_button1 = "a[class=\"cc-btn cc-allow cc-btn-format\"]"
                 wait_selector = "div[class=\"pics-view row\"]"
             elif "magnorshop" in url:
-                wait_selector = "div[class=\"products wrapper grid products-grid\"]"
+                #wait_selector = "div[class=\"products wrapper grid products-grid\"]"
                 #wait_selector_button1 = "button#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"                
+                playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
                 callback = self.parse_magnor
                 scroll = True
-                wait_initial_network = True
+                #wait_initial_network = True
             elif "neogold" in url:
                 #wait_selector_button1 = "button[class=\"cky-btn cky-btn-accept\"]"
                 #wait_selector_button2 = "button[class=\"cmplz-btn cmplz-accept\"]"
-                wait_selector = "div[class=\"main-content\"]"
+                #wait_selector = "div[class=\"main-content\"]"
+                playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 10000))
                 callback = self.parse_neogold
                 scroll = True
             elif "avangard" in url:
-                wait_selector = "div[class=\"collection__window\"]"
-                wait_selector_button1 = "button#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"
+                #wait_selector = "div[class=\"collection__window\"]"
+                #wait_selector_button1 = "button#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"
+                playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
                 callback = self.parse_avangard
-                scroll = True
+                #scroll = True
                 custom_page_methods.append(PageMethod("wait_for_timeout", 2000))
                 custom_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
                 custom_page_methods.append(PageMethod("wait_for_timeout", 4000))
@@ -168,15 +176,18 @@ class AurSpider(scrapy.Spider):
                 scroll = True
             elif "auracasa" in url:
                 callback = self.parse_auracasa
-                custom_page_methods.append(PageMethod("wait_for_timeout", 4000))
+                playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
                 custom_page_methods.append(PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"))
             elif "aurlingou" in url:
                 callback = self.parse_aurlingou
                 wait_selector = "div[class=\"section--content category_page\"]"
                 #wait_selector_button1 = "button[class=\"allow-btn btn js-accept-all-cookies\"]"
             elif "citygold" in url:
-                wait_selector = "div[class=\"ais-Hits\"]"
+                #wait_selector = "div[class=\"ais-Hits\"]"
                 #wait_selector_button1 = "button[class=\"CybotCookiebotDialogBodyButton\"]"
+                playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
                 callback = self.parse_citygold
                 scroll = True
             else:
@@ -217,15 +228,20 @@ class AurSpider(scrapy.Spider):
             )
 
 
-    def get_weight_from_title(self, item_title, item_link):
+    def get_weight(self, item_title, item_link):
         skip_list = ['argint', 'silver']
         if any(item in item_title for item in skip_list):
-            self.logger.info(f"SKIP SILVER {item_link}")
+            self.logger.debug(f"Skip silver: {item_link}")
+            return 0
+
+        skip_list = ['platin',]
+        if any(item in item_title for item in skip_list):
+            self.logger.debug(f"Skip platinum: {item_link}")
             return 0
 
         skip_list = ['gulde', 'sovere', 'suvera', 'ducat', 'franc', 'franz', 'coroa', 'kruge', 'ruble', 'george', 'crown', 'marca', 'marci', 'kuru', 'imperiul', 'iling', 'illing', 'lira', 'lire', 'eagle', 'mark', 'kroner', 'coron', 'coroan', 'guilder']
         if any(item in item_title for item in skip_list):
-            self.logger.info(f"SKIP COIN {item_link}")
+            self.logger.debug(f"Skip coin: {item_link}")
             return 0
 
         item_title = item_title.replace('gold', '').replace('green', '').replace('roz', '').replace('kang', '').replace('lingo', '').replace('giovan', '').replace('multigram', '').replace('mozart', '').replace('king', '')
@@ -247,11 +263,27 @@ class AurSpider(scrapy.Spider):
                     item_weight = float(item_weight)
                 item_weight = item_weight * config['ounce']
             elif 'oz' in item_title:
-                item_weight = item_title.strip().split("oz")[0].strip().split()[-1].replace(',', '.').split('x')[0]
-                if "/" in item_weight:
-                    item_weight = float(Fraction(item_weight))
+                item_weight = item_title.strip().split("oz")[0].strip()
+
+                if "x" in item_weight:
+                    x0 = item_weight.split('x')[0].split()[-1]
+                    x1 = item_weight.split('x')[1]
+
+                    if "/" in x0:
+                        x0 = float(Fraction(x0))
+                    else:
+                        x0 = float(x0)
+                    if "/" in x1:
+                        x1 = float(Fraction(x1))
+                    else:
+                        x1 = float(x0)
+                    item_weight = x0 * x1
                 else:
-                    item_weight = float(item_weight)
+                    item_weight= item_weight.split()[-1]
+                    if "/" in item_weight:
+                        item_weight = float(Fraction(item_weight))
+                    else:
+                        item_weight = float(item_weight)
                 item_weight = item_weight * config['ounce']
             elif 'gram' in item_title:
                 item_weight = float(item_title.strip().split("gram")[0].strip().split()[-1].replace(',', '.').split('x')[0])
@@ -270,434 +302,251 @@ class AurSpider(scrapy.Spider):
             elif '/' in item_title:
                 item_weight = float(Fraction(item_title.strip().split()[0].strip().split()[-1].strip()))
             else:
-                self.logger.error(f"Failed to parse weight: no keyword in this item {item_link} {item_title}")
+                self.logger.error(f"Failed to parse weight: {item_link} no keyword")
                 return 0
             return item_weight
         except Exception as e:
-            self.logger.error(f"Failed to parse weight: no float in this item {item_link} {item_title} {e}")
+            self.logger.error(f"Failed to parse weight: {item_link} {e}")
             return 0
+
+
+    def get_price(self, item_price_str, item_price_transport):
+        if '€' in item_price_str:
+            item_price_str = item_price_str.strip().lower().replace(' ', '').replace(",", "").replace("€", "")
+        else:
+            item_price_str = item_price_str.strip().lower().replace(' ', '').replace('.', '').replace(',', '.').replace('lei', '')
+
+        try:
+            if '€' in item_price_str:
+                item_price = (float(item_price_str) + item_price_transport) * config['euro_to_ron']
+            else:
+                item_price = float(item_price_str) + item_price_transport
+            return item_price
+        except Exception as e:
+            self.logger.error(f"Failed to parse price: {item_link} {e}")
+            return 0
+
+
+    def get_price_per_gram(self, items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+        for item in items:
+            # get link
+            item_link = item.css(item_link_css).get()
+            if item_link:
+                if item_link_prefix:
+                    item_link = item_link_prefix + item_link
+
+                # get stock
+                if config['stock'] is True and item_stoc_css is not None:
+                    item_stoc = item.css(item_stoc_css).get()
+                    if item_stoc is not None:
+                        if "epuizat" in item_stoc.lower() or "out" in item_stoc.lower():
+                            self.logger.debug(f"Out of stock: {item_link}")
+                            continue
+                        else:
+                            self.logger.debug(f"item has stoc selector but not out of stock: {item_link}")
+
+                # get title
+                item_title = str(item.css(item_title_css).get()).strip().lower().replace("-", "")
+
+                # get price
+                item_price = item.css(item_price_css1).get()
+                if item_price is None or "None" in item_price:
+                    if item_price_css2:
+                        item_price = item.css(item_price_css2).get()
+                        if item_price is None or "None" in item_price:
+                            self.logger.error(f"Cannot parse price css2 for: {item_link}")
+                            continue
+                    else:
+                        self.logger.error(f"Cannot parse price css1 for: {item_link}")
+                        continue
+
+                item_price = self.get_price(item_price, item_price_transport)
+
+                if item_price == 0:
+                    continue
+
+                # get weight
+                item_weight = self.get_weight(item_title, item_link)
+
+                if item_weight == 0:
+                    continue
+
+                if item_weight > config['weight']:
+                    continue
+
+                # get price per gram
+                item_price_per_gram = item_price / item_weight
+
+                # return csv line
+                yield {
+                    'price_per_gram': item_price_per_gram,
+                    'price': item_price,
+                    'weight': item_weight,
+                    'link': item_link,
+                    'description': item_title
+                }
 
 
     def parse_goldsilvershop24(self, response):
         items = response.css("li.p-1.col-6.col-md-4.col-lg-4.col-xl-2.item.product.product-item")
-
-        for item in items:
-            item_link = item.css("a.product.photo.product-item-photo::attr(href)").get()
-            if item_link:
-                item_title = str(item.css("a.col-12.product-item-link.productListColumnProductTitle::text").get()).strip().lower().replace("-", "")
-                item_price = str(item.css("div.col-6.small.tierPrice.goldFont.h-auto span::text").get())
-                #self.logger.info(f"ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRREEEEEEEEEEEEEEEEEEE link {item_link}   {item_price}")
-                if "None" in item_price:
-                    self.logger.error(f"Cannot parse item price: {item_link}")
-                    continue
-                item_price = item_price.strip().split()[0].replace(' ', '').replace(",", "")
-                item_price = (float(item_price) + 15) * config['euro_to_ron']
-
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        item_link_css = "a.product.photo.product-item-photo::attr(href)"
+        item_link_prefix = None
+        item_title_css = "a.col-12.product-item-link.productListColumnProductTitle::text"
+        item_price_css1 = "div.col-6.small.tierPrice.goldFont.h-auto span::text"
+        item_price_css2 = None
+        item_price_transport = 15
+        item_stoc_css = None
 
 
     async def parse_avenue(self, response):
         items = response.css("div.sc-c9a6ecec-0.bdzbGi")
+        item_link_css = "a.sc-21016d95-0.jxrwJO::attr(href)"
+        item_link_prefix = "https://www.goldavenue.com"
+        item_title_css = "div.sc-94cb3c14-0.fOTrwV p::text"
+        item_price_css1 = "div.sc-94cb3c14-0.gSCdFF p::text"
+        item_price_css2 = None
+        item_price_transport = 120
+        item_stoc_css = "div.sc-94cb3c14-0.gSCdFF p::text"
 
-        for item in items:
-            if config['stoc'] is True:
-                item_stoc=item.css("div.sc-94cb3c14-0.gSCdFF p::text").get()
-                if "out of stock" in item_stoc.lower():
-                    continue
-
-            item_link = item.css("a.sc-21016d95-0.jxrwJO::attr(href)").get()
-            if item_link:
-                item_link = "https://www.goldavenue.com" + item_link
-                #self.logger.info(f"ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRREEEEEEEEEEEEEEEEEEE link {item_link}")
-                item_title = str(item.css("div.sc-94cb3c14-0.fOTrwV p::text").get()).strip().lower().replace("-", "")
-                item_price = item.css("div.sc-94cb3c14-0.gSCdFF p::text").get()
-                if "None" in item_price:
-                    self.logger.info(f"Cannot initially parse item price, check reduction for: {item_link}")
-                    item_price = item.css("span.price.reduction::text").get()
-                    if "None" in item_price:
-                        self.logger.error(f"Cannot parse item price: {item_link}")
-                        continue
-                item_price = item_price.strip().split()[0].replace(' ', '').replace(",", "").replace("€", "")
-                item_price = (float(item_price) + 120) * config['euro_to_ron']
-
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
-        #await page.close()
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_stonex(self, response):
         items = response.css("div.col-12.col-lg-6.col-xl-4.mb-5")
+        item_link_css = "div.product-item-in-small a::attr(href)"
+        item_link_prefix = "https://stonexbullion.com"
+        item_title_css = "span.card-title.clamp-2.mb-2.fw-bold.text-uppercase::text"
+        item_price_css1 = "span.text-nowrap.font-size-14.me-2::text"
+        item_price_css2 = "span.price.reduction::text"
+        item_price_transport = 15
+        item_stoc_css = "span.badge.badge-sold-out.position-absolute"
 
-        for item in items:
-            if config['stoc'] is True:
-                item_stoc=item.css("span.badge.badge-sold-out.position-absolute").get()
-                if item_stoc is not None:
-                    continue
-
-            item_link = item.css("div.product-item-in-small a::attr(href)").get()
-            if item_link:
-                item_link = "https://stonexbullion.com" + item_link
-                item_title = str(item.css("span.card-title.clamp-2.mb-2.fw-bold.text-uppercase::text").get()).strip().lower().replace("-", "")
-                item_price = item.css("span.text-nowrap.font-size-14.me-2::text").get()
-                if "None" in item_price:
-                    self.logger.info(f"Cannot initially parse item price, check reduction for: {item_link}")
-                    item_price = item.css("span.price.reduction::text").get()
-                    if "None" in item_price:
-                        self.logger.error(f"Cannot parse item price: {item_link}")
-                        continue
-                item_price = item_price.strip().split()[0].replace(' ', '').replace(",", "").replace("€", "")
-                item_price = (float(item_price) + 15) * config['euro_to_ron']
-
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_auracasa(self, response):
         items = response.css("article.js-product.product-miniature.js-product-miniature.prod-box-grid.col-sm-6.col-lg-4.col-xs-12")
-        #self.logger.info(f"{items}")
+        item_link_css = "h2.h3.product-title a::attr(href)"
+        item_link_prefix = None
+        item_title_css = "h2.h3.product-title a::text"
+        item_price_css1 = "span.price.reduction::text"
+        item_price_css2 = "span.price::text"
+        item_price_transport = 15
+        item_stoc_css = None
 
-        for item in items:
-            item_link = item.css("h2.h3.product-title a::attr(href)").get()
-
-            if item_link:
-                item_title = str(item.css("h2.h3.product-title a::text").get()).strip().lower().replace("-", "")
-                item_price = item.css("span.price::text").get()
-                if "None" in item_price:
-                    self.logger.info(f"Cannot initially parse item price, check reduction for: {item_link}")
-                    item_price = item.css("span.price.reduction::text").get()
-                    if "None" in item_price:
-                        self.logger.error(f"Cannot parse item price: {item_link}")
-                        continue
-                item_price = item_price.strip().split()[0].replace(' ', '').replace(",", "").replace("€", "")
-                item_price = (float(item_price) + 15) * config['euro_to_ron']
-
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_aurlingou(self, response):
         items = response.css("div.product.js-custom-difference")
+        item_link_css = "a::attr(href)"
+        item_link_prefix = None
+        item_title_css = "div.product_title a::text"
+        item_price_css1 = "div.price::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = None
 
-        for item in items:
-            item_link = item.css("a::attr(href)").get()
-            if item_link:
-                item_title = str(item.css("div.product_title a::text").get()).strip().lower()
-                item_price = float(str(item.css("div.price::text").get()).strip().split()[0].replace(' ', '').replace(".", "").replace(',', '.'))
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_smartgold(self, response):
         items = response.css("li")
+        item_link_css = "h2.woocommerce-loop-product__title a::attr(href)"
+        item_link_prefix = None
+        item_title_css = "h2.woocommerce-loop-product__title a::text"
+        item_price_css1 = "span.woocommerce-Price-amount.amount bdi::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = ".outofstock"
 
-        for item in items:
-            item_link = item.css("h2.woocommerce-loop-product__title a::attr(href)").get()
-            if item_link:
-                if config['stoc'] is True:
-                    item_stoc = item.css(".outofstock").get()
-                    if item_stoc is not None:
-                        self.logger.info(f"OUT OF STOCK: {item_link}")
-                        continue
-
-                item_title = str(item.css("h2.woocommerce-loop-product__title a::text").get()).strip().lower()
-                item_price = float(str(item.css("span.woocommerce-Price-amount.amount bdi::text").get()).strip().split('&')[0].replace(' ', '').replace(".", "").replace(',', '.'))
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_citygold(self, response):
         items = response.css("li.ais-Hits-item.col-12.col-md-8.col-lg-12.col-xl-8")
-        for item in items:
-            '''
-            if config['stoc'] is True:
-                item_stoc= item.css("button.action.tocart.primary span::text").get()
-                #print(f"{item_stoc}")
-                if "daug" not in item_stoc:
-                    continue
-            '''
+        item_link_css = "div.product-title a::attr(href)"
+        item_link_prefix = None
+        item_title_css = "div.product-title a::text"
+        item_price_css1 = "div.product-price::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = None
 
-            item_link = item.css("div.product-title a::attr(href)").get()
-            item_title = str(item.css("div.product-title a::text").get()).strip()
-            item_price = float(str(item.css("div.product-price::text").get()).split()[0].replace(".", ""))
-            item_weight = float(item_title.split("-")[0].split()[-1].replace("g", " "))
-
-            if item_weight > config['weight']:
-                return
-
-            item_price_per_gram = item_price / item_weight
-
-            yield {
-                'price_per_gram': item_price_per_gram,
-                'price': item_price,
-                'weight': item_weight,
-                'link': item_link,
-                'description': item_title
-            }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_magnor(self, response):
         items = response.css("li.item.product.product-item")
+        item_link_css = "a.product-item-link::attr(href)"
+        item_link_prefix = None
+        item_title_css = "a.product-item-link::text"
+        item_price_css1 = "span.price-container span.price-wrapper span.price::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = None
 
-        for item in items:
-            item_link = item.css("a.product-item-link::attr(href)").get()
-            if item_link:
-                item_title = str(item.css("a.product-item-link::text").get()).strip().lower().replace("-", "")
-                item_price = item.css("span.price-container span.price-wrapper span.price::text").get()
-
-                if item_price is None or "None" in item_price:
-                    self.logger.info(f"Cannot initially parse item price for: {item_link}")
-                    continue
-                item_price = item_price.strip().split('lei')[0].replace(' ', '').replace(".", "").replace(",", ".")
-                item_price = float(item_price)
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_goldbars(self, response):
         items = response.css("div.prod-card")
+        item_link_css = "a[class*=\"image-wrapper-prod\"]::attr(href)"
+        item_link_prefix = "https://goldbars.ro"
+        item_title_css = "a.product-name.mt-1.font-sm.line-clamp-2.max-sm\\:line-clamp-2::text"
+        item_price_css1 = "div.font-semibold.price-prod::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = None
 
-        for item in items:
-            #item_link = item.css("img::attr(src)").get()
-            item_link = item.css("a[class*=\"image-wrapper-prod\"]::attr(href)").get()
-
-            if item_link:
-                item_link = response.url + item_link
-                item_title = str(item.css('a.product-name.mt-1.font-sm.line-clamp-2.max-sm\\:line-clamp-2::text').get()).strip().lower().replace("-", "")
-                item_price = item.css("div.font-semibold.price-prod::text").get()
-                if "None" in item_price:
-                    self.logger.error(f"Cannot parse item price: {item_link}")
-                    continue
-                item_price = item_price.strip().split()[0].replace(' ', '').replace(".", "")
-                item_price = float(item_price)
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_neogold(self, response):
         items = response.css("li.product-wrap")
+        item_link_css = "a.woocommerce-LoopProduct-link.woocommerce-loop-product__link::attr(href)"
+        item_link_prefix = None
+        item_title_css = "h3.woocommerce-loop-product__title a::text"
+        item_price_css1 = "span.woocommerce-Price-amount.amount bdi::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = "label.product-label.label-stock"
 
-        for item in items:
-            if config['stoc'] is True:
-                item_stoc= item.css("label.product-label.label-stock").get()
-                if item_stoc is not None:
-                    continue
-
-            item_link = item.css("a.woocommerce-LoopProduct-link.woocommerce-loop-product__link::attr(href)").get()
-            if item_link:
-                item_title = str(item.css("h3.woocommerce-loop-product__title a::text").get()).strip().lower().replace("-", "")
-                item_price = item.css("span.woocommerce-Price-amount.amount bdi::text").get()
-
-                if item_price is None or "None" in item_price:
-                    self.logger.info(f"Cannot initially parse item price for: {item_link}")
-                    continue
-                item_price = item_price.strip().split('&')[0].replace(' ', '').replace('.', '').replace(",", ".")
-                item_price = float(item_price)
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_avangard(self, response):
         items = response.css("div.product-item")
+        item_link_css = "a.product-item__image-wrapper.db.mb3::attr(href)"
+        item_link_prefix = "https://avangardgold.ro"
+        item_title_css = "div.product-item__details a::text"
+        item_price_css1 = "div.buy_price span:not([class])::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = None
 
-        for item in items:
-            item_link = item.css("a.product-item__image-wrapper.db.mb3::attr(href)").get()
-            if item_link:
-                item_title = str(item.css("div.product-item__details a::text").get()).strip().lower().replace("-", "")
-                item_price = item.css("div.buy_price span:not([class])::text").get()
-
-                if item_price is None or "None" in item_price:
-                    self.logger.info(f"Cannot initially parse item price for: {item_link}")
-                    continue
-                item_price = item_price.strip().split('lei')[0].replace(' ', '').replace(",", ".")
-                item_price = float(item_price)
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
 
     def parse_tavex(self, response):
         items = response.css("div.grid__col--xs-6")
+        item_link_css = "a.product__overlay-link::attr(href)"
+        item_link_prefix = None
+        item_title_css = "span.product__title-inner::text"
+        item_price_css1 = "span.product__price-value.h-price-flash.js-product-price-from::text"
+        item_price_css2 = None
+        item_price_transport = 0
+        item_stoc_css = "span.product__stock.product__out-of-stock"
 
-        for item in items:
-            if config['stoc'] is True:
-                item_stoc= item.css("span.product__stock.product__out-of-stock").get()
-                if item_stoc is not None:
-                    continue
-
-            item_link = item.css("a.product__overlay-link::attr(href)").get()
-            if item_link:
-                item_title = str(item.css("span.product__title-inner::text").get()).strip().lower().replace("-", "")
-                item_price = item.css("span.product__price-value.h-price-flash.js-product-price-from::text").get()
-
-                if item_price is None or "None" in item_price:
-                    self.logger.info(f"Cannot initially parse item price for: {item_link}")
-                    continue
-                item_price = item_price.strip().split()[0].replace(' ', '').replace(",", ".")
-                item_price = float(item_price)
-                item_weight = self.get_weight_from_title(item_title, item_link)
-
-                if item_weight == 0:
-                    continue
-
-                if item_weight > config['weight']:
-                    continue
-
-                item_price_per_gram = item_price / item_weight
-
-                yield {
-                    'price_per_gram': item_price_per_gram,
-                    'price': item_price,
-                    'weight': item_weight,
-                    'link': item_link,
-                    'description': item_title
-                }
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
