@@ -1,6 +1,6 @@
-from fractions import Fraction
 import scrapy
 from scrapy_playwright.page import PageMethod
+from fractions import Fraction
 
 config = {
     'stock': True,
@@ -30,9 +30,9 @@ class AurSpider(scrapy.Spider):
         "citygold.ro",
     ]
     start_urls = [
-        "https://avangardgold.ro/collections/vanzare-aur",
         "https://smartgold.ro/index.php/categorie-produs/lingouri",
         "https://smartgold.ro/index.php/categorie-produs/monede/",
+        "https://avangardgold.ro/collections/vanzare-aur",
         "https://magnorshop.ro/lingouri",
         "https://tavex.ro/aur/page/1",
         "https://tavex.ro/aur/page/2",
@@ -54,12 +54,12 @@ class AurSpider(scrapy.Spider):
         "https://stonexbullion.com/en/gold-bars/?page=4",
         "https://stonexbullion.com/en/gold-bars/?page=5",
         "https://www.citygold.ro/cat/lingouri-de-aur-investitie-colectie",
-        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asci&page=1",
-        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asci&page=2",
-        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asci&page=3",
-        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asci&page=4",
-        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asci&page=5",
-        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asci&page=6",
+        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asc",
+        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asc&page=2",
+        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asc&page=3",
+        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asc&page=4",
+        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asc&page=5",
+        "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asc&page=6",
         "https://goldsilvershop24.com/buy/gold-bars.html",
         "https://goldsilvershop24.com/buy/gold-coins.html",
     ]
@@ -87,7 +87,9 @@ class AurSpider(scrapy.Spider):
             if "smartgold" in url:
                 callback = self.parse_smartgold
                 #wait_selector_button1 = "button[aria-label=\"Accept Cookies\"]"
-                playwright_page_methods.append(PageMethod("wait_for_timeout", 15000))
+                #playwright_page_methods.append(PageMethod("wait_for_timeout", 15000))
+                playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
 
                 button = "button[class=\"load-next-button load-more-button shop-load-more-button\"]"
 
@@ -107,8 +109,6 @@ class AurSpider(scrapy.Spider):
             elif "goldsilvershop24" in url:
                 callback = self.parse_goldsilvershop24
 
-                playwright_page_methods.append(PageMethod("wait_for_timeout", 2000))
-                playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
                 playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
@@ -118,9 +118,11 @@ class AurSpider(scrapy.Spider):
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
                 playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
-                playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
+                playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 4)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
-                playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
+                playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 4)"))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
+                playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 4)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
                 playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 4)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 4000))
@@ -130,7 +132,7 @@ class AurSpider(scrapy.Spider):
 
                 # Wait for a real element to confirm the challenge is solved
                 playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
-                playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
+                playwright_page_methods.append(PageMethod("wait_for_timeout", 10000))
                 playwright_page_methods.append(PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight / 2)"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 10000))
             elif "stonex" in url:
@@ -228,6 +230,29 @@ class AurSpider(scrapy.Spider):
             )
 
 
+    def get_weight_combi(self, item_weight):
+        if "x" in item_weight:
+            x0 = item_weight.split('x')[0].strip().split()[-1].strip()
+            x1 = item_weight.split('x')[1].strip()
+
+            if "/" in x0:
+                x0 = float(Fraction(x0))
+            else:
+                x0 = float(x0)
+            if "/" in x1:
+                x1 = float(Fraction(x1))
+            else:
+                x1 = float(x1)
+            item_weight = x0 * x1
+        else:
+            item_weight= item_weight.split()[-1].strip()
+            if "/" in item_weight:
+                item_weight = float(Fraction(item_weight))
+            else:
+                item_weight = float(item_weight)
+        return item_weight
+
+
     def get_weight(self, item_title, item_link):
         skip_list = ['argint', 'silver']
         if any(item in item_title for item in skip_list):
@@ -244,61 +269,41 @@ class AurSpider(scrapy.Spider):
             self.logger.debug(f"Skip coin: {item_link}")
             return 0
 
-        item_title = item_title.replace('gold', '').replace('green', '').replace('roz', '').replace('kang', '').replace('lingo', '').replace('giovan', '').replace('multigram', '').replace('mozart', '').replace('king', '')
+        item_title = item_title.replace('gold', '').replace('green', '').replace('roz', '').replace('kang', '').replace('lingo', '').replace('giovan', '').replace('multigram', '').replace('mozart', '').replace('king', '').replace('box', '')
         try:
             if 'kilogram' in item_title:
                 item_weight = float(item_title.strip().split("kilogram")[0].strip().split()[-1].replace(',', '.').split('x')[0]) * config['kilo']
             elif 'ounce' in item_title:
-                item_weight = item_title.strip().split("ounce")[0].strip().split()[-1].replace(',', '.').split('x')[0]
-                if "/" in item_weight:
-                    item_weight = float(Fraction(item_weight))
-                else:
-                    item_weight = float(item_weight)
+                item_weight = item_title.strip().split("ounce")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
                 item_weight = item_weight * config['ounce']
             elif 'uncie' in item_title:
-                item_weight = item_title.strip().split("uncie")[0].strip().split()[-1].replace(',', '.').split('x')[0]
-                if "/" in item_weight:
-                    item_weight = float(Fraction(item_weight))
-                else:
-                    item_weight = float(item_weight)
+                item_weight = item_title.strip().split("uncie")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
                 item_weight = item_weight * config['ounce']
             elif 'oz' in item_title:
-                item_weight = item_title.strip().split("oz")[0].strip()
-
-                if "x" in item_weight:
-                    x0 = item_weight.split('x')[0].split()[-1]
-                    x1 = item_weight.split('x')[1]
-
-                    if "/" in x0:
-                        x0 = float(Fraction(x0))
-                    else:
-                        x0 = float(x0)
-                    if "/" in x1:
-                        x1 = float(Fraction(x1))
-                    else:
-                        x1 = float(x0)
-                    item_weight = x0 * x1
-                else:
-                    item_weight= item_weight.split()[-1]
-                    if "/" in item_weight:
-                        item_weight = float(Fraction(item_weight))
-                    else:
-                        item_weight = float(item_weight)
+                item_weight = item_title.strip().split("oz")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
                 item_weight = item_weight * config['ounce']
             elif 'gram' in item_title:
-                item_weight = float(item_title.strip().split("gram")[0].strip().split()[-1].replace(',', '.').split('x')[0])
+                item_weight = item_title.strip().split("gram")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
             elif 'kilo' in item_title:
                 item_weight = float(item_title.strip().split("kilo")[0].strip().split()[-1].replace(',', '.').split('x')[0]) * config['kilo']
             elif 'kg' in item_title:
                 item_weight = float(item_title.strip().split("kg")[0].strip().split()[-1].replace(',', '.').split('x')[0]) * config['kilo']
             elif 'gr' in item_title:
-                item_weight = float(item_title.strip().split("gr")[0].strip().split()[-1].replace(',', '.').split('x')[0])
+                item_weight = item_title.strip().split("gr")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
             elif 'g ' in item_title:
-                item_weight = float(item_title.strip().split("g ")[0].strip().split()[-1].replace(',', '.').split('x')[0])
+                item_weight = item_title.strip().split("g ")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
             elif 'g,' in item_title:
-                item_weight = float(item_title.strip().split("g,")[0].strip().split()[-1].replace(',', '.').split('x')[0])
+                item_weight = item_title.strip().split("g,")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
             elif 'g' in item_title:
-                item_weight = float(item_title.strip().split("g")[0].strip().split()[-1].replace(',', '.').split('x')[0])
+                item_weight = item_title.strip().split("g")[0].strip().replace(',', '.')
+                item_weight = self.get_weight_combi(item_weight)
             elif '/' in item_title:
                 item_weight = float(Fraction(item_title.strip().split()[0].strip().split()[-1].strip()))
             else:
@@ -311,15 +316,12 @@ class AurSpider(scrapy.Spider):
 
 
     def get_price(self, item_price_str, item_price_transport):
-        if '€' in item_price_str:
-            item_price_str = item_price_str.strip().lower().replace(' ', '').replace(",", "").replace("€", "")
-        else:
-            item_price_str = item_price_str.strip().lower().replace(' ', '').replace('.', '').replace(',', '.').replace('lei', '')
-
         try:
             if '€' in item_price_str:
+                item_price_str = item_price_str.strip().lower().replace(' ', '').replace(",", "").replace("€", "")
                 item_price = (float(item_price_str) + item_price_transport) * config['euro_to_ron']
             else:
+                item_price_str = item_price_str.strip().lower().replace(' ', '').replace('.', '').replace(',', '.').replace('lei', '')
                 item_price = float(item_price_str) + item_price_transport
             return item_price
         except Exception as e:
@@ -397,8 +399,11 @@ class AurSpider(scrapy.Spider):
         item_price_transport = 15
         item_stoc_css = None
 
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
 
-    async def parse_avenue(self, response):
+
+    def parse_avenue(self, response):
         items = response.css("div.sc-c9a6ecec-0.bdzbGi")
         item_link_css = "a.sc-21016d95-0.jxrwJO::attr(href)"
         item_link_prefix = "https://www.goldavenue.com"
