@@ -28,6 +28,7 @@ class AurSpider(scrapy.Spider):
         "goldavenue.com",
         "goldsilvershop24.com",
         "citygold.ro",
+        "geiger-edelmetalle.de",
     ]
     start_urls = [
         "https://smartgold.ro/index.php/categorie-produs/lingouri",
@@ -62,6 +63,7 @@ class AurSpider(scrapy.Spider):
         "https://www.goldavenue.com/en/buy/gold?premium_per_oz_sort=asc&page=6",
         "https://goldsilvershop24.com/buy/gold-bars.html",
         "https://goldsilvershop24.com/buy/gold-coins.html",
+        "https://www.geiger-edelmetalle.de/en/Online-Shop/Gold/Gold-Bars/?order=topseller&p=1",
     ]
     custom_settings = {
         'COOKIES_ENABLED': True,
@@ -191,6 +193,9 @@ class AurSpider(scrapy.Spider):
                 playwright_page_methods.append(PageMethod("wait_for_selector", "body"))
                 playwright_page_methods.append(PageMethod("wait_for_timeout", 5000))
                 callback = self.parse_citygold
+                scroll = True
+            elif "geiger" in url:
+                callback = self.parse_geiger
                 scroll = True
             else:
                 print(f"Gold site not found in url: {url}")
@@ -341,11 +346,14 @@ class AurSpider(scrapy.Spider):
                 if config['stock'] is True and item_stoc_css is not None:
                     item_stoc = item.css(item_stoc_css).get()
                     if item_stoc is not None:
-                        if "epuizat" in item_stoc.lower() or "out" in item_stoc.lower():
-                            self.logger.debug(f"Out of stock: {item_link}")
+                        if "epuizat" in item_stoc.lower() or "out" in item_stoc.lower() or "" in item_stoc.lower():
+                            self.logger.error(f"Out of stock: {item_link}")
                             continue
                         else:
-                            self.logger.debug(f"item has stoc selector but not out of stock: {item_link}")
+                            self.logger.error(f"item has stoc selector but not out of stock: {item_link}")
+                    else:
+                        self.logger.error(f"Out of stock: selector is None: {item_link}")
+                        continue
 
                 # get title
                 item_title = str(item.css(item_title_css).get()).strip().lower().replace("-", "")
@@ -552,6 +560,20 @@ class AurSpider(scrapy.Spider):
         item_price_css2 = None
         item_price_transport = 0
         item_stoc_css = "span.product__stock.product__out-of-stock"
+
+        for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
+            yield item
+
+
+    def parse_geiger(self, response):
+        items = response.css("div.cms-listing-col.col-md-6.col-lg-4.col-xl-4")
+        item_link_css = "a.product-name::attr(href)"
+        item_link_prefix = None
+        item_title_css = "a.product-name::text"
+        item_price_css1 = "span.product-price::text"
+        item_price_css2 = None
+        item_price_transport = 15
+        item_stoc_css = "div.product-price-info"
 
         for item in self.get_price_per_gram(items, item_link_css, item_title_css, item_price_css1, item_price_css2, item_stoc_css, item_link_prefix, item_price_transport):
             yield item
